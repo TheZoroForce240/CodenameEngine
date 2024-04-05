@@ -97,6 +97,8 @@ class Charter extends UIState {
 	public static var clipboard:Array<CharterCopyboardObject> = [];
 	public static var waveformHandler:CharterWaveformHandler;
 
+	public static var keyCount = 4;
+
 	public function new(song:String, diff:String, reload:Bool = true) {
 		super();
 		if (song != null) {
@@ -775,7 +777,7 @@ class Charter extends UIState {
 						n.snappedToStrumline = false;
 						n.setPosition(n.fullID * 40 + (mousePos.x - dragStartPos.x), n.step * 40 + (mousePos.y - dragStartPos.y));
 						n.y = FlxMath.bound(n.y, 0, (__endStep*40) - n.height);
-						n.x = FlxMath.bound(n.x, 0, ((strumLines.members.length * 4)-1) * 40);
+						n.x = FlxMath.bound(n.x, 0, ((strumLines.members.length * Charter.keyCount)-1) * 40);
 						n.cursor = HAND;
 					}, function (e:CharterEvent) {
 						e.y =  e.step * 40 + (mousePos.y - dragStartPos.y) - 17;
@@ -804,7 +806,7 @@ class Charter extends UIState {
 							if (s is CharterNote) {
 								var note:CharterNote = cast s;
 								if (note.fullID + changePoint.y < 0) boundedChange.y += Math.abs(note.fullID + changePoint.y);
-								if (note.fullID + changePoint.y > (strumLines.members.length*4)-1) boundedChange.y -= (note.fullID + changePoint.y) - ((strumLines.members.length*4)-1);
+								if (note.fullID + changePoint.y > (strumLines.members.length*Charter.keyCount)-1) boundedChange.y -= (note.fullID + changePoint.y) - ((strumLines.members.length*Charter.keyCount)-1);
 							}
 
 							s.handleDrag(boundedChange);
@@ -837,7 +839,7 @@ class Charter extends UIState {
 						gridActionType = BOX_SELECTION;
 
 					var id = Math.floor(mousePos.x / 40);
-					var mouseOnGrid = id >= 0 && id < 4 * gridBackdrops.strumlinesAmount && mousePos.y >= 0;
+					var mouseOnGrid = id >= 0 && id < Charter.keyCount * gridBackdrops.strumlinesAmount && mousePos.y >= 0;
 
 					if (FlxG.mouse.justReleased) {
 							for (n in selection) n.selected = false;
@@ -847,7 +849,7 @@ class Charter extends UIState {
 								var note = new CharterNote();
 								note.updatePos(
 									FlxMath.bound(FlxG.keys.pressed.SHIFT ? ((mousePos.y-20) / 40) : quantStep(mousePos.y/40), 0, __endStep-1),
-									id % 4, 0, noteType, strumLines.members[Std.int(id/4)]
+									id % Charter.keyCount, 0, noteType, strumLines.members[Std.int(id/Charter.keyCount)]
 								);
 								notesGroup.add(note);
 								selection = [note];
@@ -1150,7 +1152,7 @@ class Charter extends UIState {
 			gridBackdrops.conductorSprY = lerp(gridBackdrops.conductorSprY, curStepFloat * 40, __firstFrame ? 1 : 1/3);
 		}
 		charterCamera.scroll.set(
-			((((40*4) * gridBackdrops.strumlinesAmount) - FlxG.width) / 2),
+			((((40*Charter.keyCount) * gridBackdrops.strumlinesAmount) - FlxG.width) / 2),
 			gridBackdrops.conductorSprY - (FlxG.height * 0.5)
 		);
 
