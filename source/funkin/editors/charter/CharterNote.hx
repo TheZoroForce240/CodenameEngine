@@ -25,8 +25,6 @@ class CharterNote extends UISprite implements ICharterSelectable {
 	public var tempSusLength:Float = 0;
 	public var sustainDraggable:Bool = false;
 
-	public var typeText:UIText;
-
 	public var selected:Bool = false;
 	public var draggable:Bool = true;
 
@@ -43,8 +41,6 @@ class CharterNote extends UISprite implements ICharterSelectable {
 		sustainSpr.makeSolid(1, 1, -1);
 		sustainSpr.scale.set(10, 0);
 		members.push(sustainSpr);
-
-		typeText = new UIText(x, y, 0, Std.string(type));
 
 		cursor = sustainSpr.cursor = BUTTON;
 		moves = false;
@@ -80,10 +76,6 @@ class CharterNote extends UISprite implements ICharterSelectable {
 		this.susLength = susLength;
 		this.type = type;
 		if (strumLine != null) this.strumLine = strumLine;
-
-		typeText.exists = type != 0;
-		typeText.text = Std.string(this.type);
-		typeText.follow(this, 20 - (typeText.frameWidth/2), 20 - (typeText.frameHeight/2));
 
 		y = step * 40;
 
@@ -147,9 +139,6 @@ class CharterNote extends UISprite implements ICharterSelectable {
 			sustainDraggable = UIState.state.isOverlapping(sustainSpr, @:privateAccess sustainSpr.__rect);
 		}
 
-		if (typeText.exists)
-			typeText.follow(this, 20 - (typeText.frameWidth/2), 20 - (typeText.frameHeight/2));
-
 		if (__passed != (__passed = step < Conductor.curStepFloat)) {
 			if (__passed && FlxG.sound.music.playing && Charter.instance.hitsoundsEnabled(strumLineID))
 				Charter.instance.hitsound.replay();
@@ -157,7 +146,6 @@ class CharterNote extends UISprite implements ICharterSelectable {
 
 		if (strumLine != null) {
 			sustainSpr.alpha = alpha = !strumLine.strumLine.visible ? (__passed ? 0.2 : 0.4) : (__passed ? 0.6 : 1);
-			typeText.alpha = !strumLine.strumLine.visible ? (__passed ? 0.4 : 0.6) : (__passed ? 0.8 : 1);
 		}
 
 		colorTransform.redMultiplier = colorTransform.greenMultiplier = colorTransform.blueMultiplier = selected ? 0.75 : 1;
@@ -190,6 +178,25 @@ class CharterNote extends UISprite implements ICharterSelectable {
 
 		drawMembers();
 		drawSuper();
-		if(typeText.exists && typeText.visible) typeText.draw();
+		if (sustainSpr.visible)
+			drawTypeText();
+	}
+
+	private function drawTypeText() {
+		if (type == 0) return;
+
+		if (!Charter.instance.noteTypeTextMap.exists(type)) {
+			var typeText = new UIText(x, y, 0, Std.string(type));
+			Charter.instance.noteTypeTextMap.set(type, typeText);
+		}
+
+		var typeText = Charter.instance.noteTypeTextMap.get(this.type);
+		if (typeText == null) return;
+
+		typeText.follow(this, 20 - (typeText.frameWidth/2), 20 - (typeText.frameHeight/2));
+		if (strumLine != null) {
+			typeText.alpha = (!strumLine.strumLine.visible ? (__passed ? 0.4 : 0.6) : (__passed ? 0.8 : 1));
+		}
+		typeText.draw();
 	}
 }

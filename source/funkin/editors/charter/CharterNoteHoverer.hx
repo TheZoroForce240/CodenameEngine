@@ -7,7 +7,7 @@ class CharterNoteHoverer extends CharterNote {
 		super();
 
 		snappedToStrumline = selectable = autoAlpha = false; visible = sustainSpr.visible = false;
-		@:privateAccess __animSpeed = 1.25; typeText.visible = false; alpha = 0.4;
+		@:privateAccess __animSpeed = 1.25; alpha = 0.4;
 	}
 
 	@:noCompletion var __mousePos:FlxPoint = FlxPoint.get();
@@ -19,7 +19,7 @@ class CharterNoteHoverer extends CharterNote {
 				var inBoundsY:Bool = (__mousePos.y > 0 && __mousePos.y < (Charter.instance.__endStep)*40);
 				if ((__mousePos.x > 0 && __mousePos.x < Charter.instance.strumLines.totalKeyCount * 40 && inBoundsY) && showHoverer) {
 					step = FlxMath.bound(FlxG.keys.pressed.SHIFT ? ((__mousePos.y-20) / 40) : Charter.instance.quantStep(__mousePos.y/40), 0, Charter.instance.__endStep-1);
-					id = Math.floor(__mousePos.x / 40); y = step * 40; x = id * 40; visible = true; sustainSpr.visible = typeText.visible = false;
+					id = Math.floor(__mousePos.x / 40); y = step * 40; x = id * 40; visible = true; sustainSpr.visible = false;
 					angle = switch(animation.curAnim.curFrame = ((id - Charter.instance.strumLines.getStrumlineFromID(id).startingID) % 4)) {
 						case 0: -90;
 						case 1: 180;
@@ -30,9 +30,9 @@ class CharterNoteHoverer extends CharterNote {
 				} else
 					visible = false;
 			case NOTE_DRAG:
-				visible = sustainSpr.visible = typeText.visible = true; __doAnim = false;
+				visible = sustainSpr.visible = true; __doAnim = false;
 			default:
-				visible = sustainSpr.visible = typeText.visible = false; __doAnim = false;
+				visible = sustainSpr.visible = false; __doAnim = false;
 		}
 	}
 
@@ -69,9 +69,7 @@ class CharterNoteHoverer extends CharterNote {
 							sustainSpr.updateHitbox(); sustainSpr.alpha = alpha; sustainSpr.follow(this, 15, 20);
 							sustainSpr.exists = draggingNote.susLength != 0;
 
-							typeText.text = Std.string(draggingNote.type);
-							typeText.exists = draggingNote.type != 0;
-							typeText.follow(this, 20 - (typeText.frameWidth/2), 20 - (typeText.frameHeight/2));
+							type = draggingNote.type;
 
 							super.draw();
 						}

@@ -239,7 +239,10 @@ class FreeplayState extends MusicBeatState
 		autoplayElapsed += elapsed;
 		if (!disableAutoPlay && !songInstPlaying && (autoplayElapsed > timeUntilAutoplay || FlxG.keys.justPressed.SPACE)) {
 			if (curPlayingInst != (curPlayingInst = Paths.inst(songs[curSelected].name, songs[curSelected].difficulties[curDifficulty]))) {
-				var huh:Void->Void = function() FlxG.sound.playMusic(curPlayingInst, 0);
+				var huh:Void->Void = function()  {
+					FlxG.sound.playMusic(curPlayingInst, 0);
+					if (FlxG.state == PlayState.instance && FlxG.sound.music != null) FlxG.sound.music.stop();
+				}
 				if(!disableAsyncLoading) Main.execAsync(huh);
 				else huh();
 			}

@@ -43,7 +43,7 @@ class PsychParser {
 
 					if ((swagSection.mustHitSection && strumLine.type == OPPONENT) ||
 						 (!swagSection.mustHitSection && strumLine.type == PLAYER))
-						sectionNote[1] += 4;
+						sectionNote[1] += strumLine.keyCount;
 					swagSection.sectionNotes.push(sectionNote); 
 				}
 			}

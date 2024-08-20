@@ -78,6 +78,7 @@ class Charter extends UIState {
 	public var noteType:Int = 0;
 	public var noteTypes:Array<String> = [];
 	public var noteTypeText:UIText;
+	public var noteTypeTextMap:Map<Int, UIText> = [];
 
 	public var strumLines:CharterStrumLineGroup = new CharterStrumLineGroup();
 	public var notesGroup:CharterNoteGroup = new CharterNoteGroup();
