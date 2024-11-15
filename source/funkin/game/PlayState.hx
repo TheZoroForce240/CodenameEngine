@@ -243,7 +243,7 @@ class PlayState extends MusicBeatState
 	/**
 	 * Current stage name
 	 */
-	public var curStage:String = "";
+	public var curStage(get, set):String;
 
 	/**
 	 * Interval at which Girlfriend dances.
@@ -363,7 +363,7 @@ class PlayState extends MusicBeatState
 	 * Speed at which the game camera zoom lerps to.
 	 */
 	public var camGameZoomLerp:Float = 0.05;
-	
+
 	/**
 	 * Camera zoom at which the hud lerps to.
 	 */
@@ -456,6 +456,22 @@ class PlayState extends MusicBeatState
 	 */
 	public var comboGroup:RotatingSpriteGroup;
 	/**
+	 * Whenever the Rating sprites should be shown or not.
+	 *
+	 * NOTE: This is just a default value for the final value, the final value can be changed through notes hit events.
+	 */
+	public var defaultDisplayRating:Bool = true;
+	/**
+	 * Whenever the Combo sprite should be shown or not (like old Week 7 patches).
+	 *
+	 * NOTE: This is just a default value for the final value, the final value can be changed through notes hit events.
+	 */
+	public var defaultDisplayCombo:Bool = false;
+	/**
+	 * Minimum Combo Count to display the combo digits. Anything less than 0 means it won't be shown.
+	 */
+	public var minDigitDisplay:Int = 10;
+	/**
 	 * Array containing all of the note types names.
 	 */
 	public var noteTypesArray:Array<String> = [null];
@@ -524,6 +540,14 @@ class PlayState extends MusicBeatState
 			healthBar.setRange(healthBar.min, v);
 		}
 		return this.maxHealth = v;
+	}
+
+	private inline function get_curStage()
+		return stage == null ? "" : stage.stageName;
+
+	private inline function set_curStage(name:String) {
+		if (stage != null) stage.stageName = name;
+		return name;
 	}
 
 	@:dox(hide) override public function create()
@@ -857,12 +881,12 @@ class PlayState extends MusicBeatState
 		Conductor.songPosition = 0;
 		Conductor.songPosition -= Conductor.crochet * introLength - Conductor.songOffset;
 
-		var swagCounter:Int = 0;
-
-		startTimer = new FlxTimer().start(Conductor.crochet / 1000, function(tmr:FlxTimer)
-		{
-			countdown(swagCounter++);
-		}, introLength);
+		if(introLength > 0) {
+			var swagCounter:Int = 0;
+			startTimer = new FlxTimer().start(Conductor.crochet / 1000, (tmr:FlxTimer) -> {
+				countdown(swagCounter++);
+			}, introLength);
+		}
 		scripts.call("onPostStartCountdown");
 	}
 
@@ -1039,7 +1063,7 @@ class PlayState extends MusicBeatState
 				vocals.pause();
 			}
 
-			if (!startTimer.finished)
+			if (startTimer != null && !startTimer.finished)
 				startTimer.active = false;
 		}
 
@@ -1059,7 +1083,7 @@ class PlayState extends MusicBeatState
 				resyncVocals();
 			}
 
-			if (!startTimer.finished)
+			if (startTimer != null && !startTimer.finished)
 				startTimer.active = true;
 			paused = false;
 
@@ -1260,7 +1284,7 @@ class PlayState extends MusicBeatState
 				if (Conductor.songPosition >= 0)
 					startSong();
 			}
-		} else {
+		} else if (FlxG.sound.music != null) {
 			var instTime = FlxG.sound.music.time;
 			var isOffsync = vocals.time != instTime || [for(strumLine in strumLines.members) strumLine.vocals.time != instTime].contains(true);
 			__vocalOffsetViolation = Math.max(0, __vocalOffsetViolation + (isOffsync ? elapsed : -elapsed / 2));
@@ -1637,9 +1661,11 @@ class PlayState extends MusicBeatState
 
 		var event:NoteHitEvent;
 		if (strumLine != null && !strumLine.cpu)
-			event = scripts.event("onPlayerHit", EventManager.get(NoteHitEvent).recycle(false, !note.isSustainNote, !note.isSustainNote, note, strumLine.characters, true, note.noteType, note.animSuffix.getDefault(note.strumID < strumLine.members.length ? strumLine.members[note.strumID].animSuffix : strumLine.animSuffix), "game/score/", "", note.strumID, score, note.isSustainNote ? null : accuracy, 0.023, daRating, Options.splashesEnabled && !note.isSustainNote && daRating == "sick"));
+			event = EventManager.get(NoteHitEvent).recycle(false, !note.isSustainNote, !note.isSustainNote, null, defaultDisplayRating, defaultDisplayCombo, note, strumLine.characters, true, note.noteType, note.animSuffix.getDefault(note.strumID < strumLine.members.length ? strumLine.members[note.strumID].animSuffix : strumLine.animSuffix), "game/score/", "", note.strumID, score, note.isSustainNote ? null : accuracy, 0.023, daRating, Options.splashesEnabled && !note.isSustainNote && daRating == "sick");
 		else
-			event = scripts.event("onDadHit", EventManager.get(NoteHitEvent).recycle(false, false, false, note, strumLine.characters, false, note.noteType, note.animSuffix.getDefault(note.strumID < strumLine.members.length ? strumLine.members[note.strumID].animSuffix : strumLine.animSuffix), "game/score/", "", note.strumID, 0, null, 0, daRating, false));
+			event = EventManager.get(NoteHitEvent).recycle(false, false, false, null, defaultDisplayRating, defaultDisplayCombo, note, strumLine.characters, false, note.noteType, note.animSuffix.getDefault(note.strumID < strumLine.members.length ? strumLine.members[note.strumID].animSuffix : strumLine.animSuffix), "game/score/", "", note.strumID, 0, null, 0, daRating, false);
+		event.deleteNote = !note.isSustainNote; // work around, to allow sustain notes to be deleted
+		event = scripts.event(strumLine != null && !strumLine.cpu ? "onPlayerHit" : "onDadHit", event);
 		strumLine.onHit.dispatch(event);
 		scripts.event("onNoteHit", event);
 
@@ -1656,7 +1682,8 @@ class PlayState extends MusicBeatState
 				if (event.showRating || (event.showRating == null && event.player))
 				{
 					displayCombo(event);
-					displayRating(event.rating, event);
+					if (event.displayRating)
+						displayRating(event.rating, event);
 					ratingNum += 1;
 				}
 			}
@@ -1686,7 +1713,7 @@ class PlayState extends MusicBeatState
 			}
 		}
 
-		if (event.deleteNote && !note.isSustainNote) strumLine.deleteNote(note);
+		if (event.deleteNote) strumLine.deleteNote(note);
 	}
 
 	public function displayRating(myRating:String, ?evt:NoteHitEvent = null):Void {
@@ -1714,13 +1741,11 @@ class PlayState extends MusicBeatState
 	}
 
 	public function displayCombo(?evt:NoteHitEvent = null):Void {
-		var pre:String = evt != null ? evt.ratingPrefix : "";
-		var suf:String = evt != null ? evt.ratingSuffix : "";
+		if (minDigitDisplay >= 0 && (combo == 0 || combo >= minDigitDisplay)) {
+			var pre:String = evt != null ? evt.ratingPrefix : "";
+			var suf:String = evt != null ? evt.ratingSuffix : "";
 
-		var separatedScore:String = Std.string(combo).addZeros(3);
-
-		if (combo == 0 || combo >= 10) {
-			if (combo >= 10) {
+			if (evt.displayCombo) {
 				var comboSpr:FlxSprite = comboGroup.recycleLoop(FlxSprite).loadAnimatedGraphic(Paths.image('${pre}combo${suf}'));
 				comboSpr.resetSprite(comboGroup.x, comboGroup.y);
 				comboSpr.acceleration.y = 600;
@@ -1742,6 +1767,7 @@ class PlayState extends MusicBeatState
 				});
 			}
 
+			var separatedScore:String = Std.string(combo).addZeros(3);
 			for (i in 0...separatedScore.length)
 			{
 				var numScore:FlxSprite = comboGroup.recycleLoop(FlxSprite).loadAnimatedGraphic(Paths.image('${pre}num${separatedScore.charAt(i)}${suf}'));
@@ -1919,7 +1945,7 @@ class PlayState extends MusicBeatState
 	}
 }
 
-class ComboRating {
+final class ComboRating {
 	public var percent:Float;
 	public var rating:String;
 	public var color:FlxColor;

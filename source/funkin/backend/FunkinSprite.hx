@@ -1,5 +1,7 @@
 package funkin.backend;
 
+import flixel.animation.FlxAnimation;
+import flxanimate.animate.FlxAnim.FlxSymbolAnimation;
 import funkin.backend.utils.XMLUtil.BeatAnim;
 import funkin.backend.utils.XMLUtil.AnimData;
 import funkin.backend.utils.XMLUtil.IXMLEvents;
@@ -11,6 +13,7 @@ import funkin.backend.system.interfaces.IOffsetCompatible;
 import flixel.math.FlxMatrix;
 import flixel.math.FlxRect;
 import flixel.math.FlxPoint;
+import flixel.util.typeLimit.OneOfTwo;
 import funkin.backend.system.interfaces.IBeatReceiver;
 
 enum abstract XMLAnimType(Int)
@@ -96,6 +99,13 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 		super.update(elapsed);
 		if (animateAtlas != null)
 			animateAtlas.update(elapsed);
+
+		// hate how it looks like but hey at least its optimized and fast  - Nex
+		if (!debugMode && isAnimFinished()) {
+			var name = getAnimName() + '-loop';
+			if (hasAnimation(name))
+				playAnim(name, null, lastAnimContext);
+		}
 	}
 
 	public function loadSprite(path:String, Unique:Bool = false, Key:String = null)
@@ -212,10 +222,12 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 			animateAtlas.flipX = flipX;
 			animateAtlas.flipY = flipY;
 			animateAtlas.shader = shader;
+			animateAtlas.shaderEnabled = shaderEnabled;
 			animateAtlas.antialiasing = antialiasing;
 			animateAtlas.skew = skew;
 			animateAtlas.transformMatrix = transformMatrix;
 			animateAtlas.matrixExposed = matrixExposed;
+			animateAtlas.colorTransform = colorTransform;
 		}
 	}
 
@@ -285,10 +297,15 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 	#if REGION
 	public var lastAnimContext:PlayAnimContext = DANCE;
 
-	public function playAnim(AnimName:String, Force:Bool = false, Context:PlayAnimContext = NONE, Reversed:Bool = false, Frame:Int = 0):Void
+	public function playAnim(AnimName:String, ?Force:Null<Bool>, Context:PlayAnimContext = NONE, Reversed:Bool = false, Frame:Int = 0):Void
 	{
 		if (AnimName == null)
 			return;
+
+		if (Force == null) {
+			var anim = animDatas.get(AnimName);
+			Force = anim != null && anim.forced;
+		}
 
 		if (animateAtlas != null)
 		{
@@ -309,6 +326,12 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 		daOffset.putWeak();
 
 		lastAnimContext = Context;
+	}
+
+	public function getAnim(name:String):OneOfTwo<FlxAnimation, FlxSymbolAnimation> {
+		if(animateAtlas != null)
+			return animateAtlas.anim.getByName(name);
+		return animation.getByName(name);
 	}
 
 	public inline function getAnimOffset(name:String)
@@ -337,6 +360,10 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 		return name;
 	}
 
+	public inline function isAnimReversed():Bool {
+		return animateAtlas != null ? animateAtlas.anim.reversed : animation.curAnim != null ? animation.curAnim.reversed : false;
+	}
+
 	public inline function removeAnimation(name:String) {
 		if (animateAtlas != null)
 			@:privateAccess animateAtlas.anim.animsMap.remove(name);
@@ -360,7 +387,11 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 
 	public inline function isAnimFinished()
 	{
-		return animateAtlas != null ? (animateAtlas.anim.finished) : (animation.curAnim != null ? animation.curAnim.finished : true);
+		return animateAtlas != null ? animateAtlas.anim.finished : (animation.curAnim != null ? animation.curAnim.finished : true);
+	}
+
+	public inline function isAnimAtEnd() {
+		return animateAtlas != null ? animateAtlas.anim.isAtEnd : (animation.curAnim != null ? animation.curAnim.isAtEnd : false);
 	}
 	#end
 

@@ -12,7 +12,9 @@ import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
 import funkin.options.keybinds.KeybindsOptions;
 import funkin.menus.StoryMenuState;
+import funkin.backend.system.Conductor;
 import funkin.backend.utils.FunkinParentDisabler;
+import funkin.options.TreeMenu;
 
 class PauseSubState extends MusicBeatSubstate
 {
@@ -152,6 +154,7 @@ class PauseSubState extends MusicBeatSubstate
 				persistentDraw = false;
 				openSubState(new KeybindsOptions());
 			case "Change Options":
+				TreeMenu.lastState = PlayState;
 				FlxG.switchState(new OptionsMenu());
 			case "Exit to charter":
 				FlxG.switchState(new funkin.editors.charter.Charter(PlayState.SONG.meta.name, PlayState.difficulty, false));
@@ -161,6 +164,9 @@ class PauseSubState extends MusicBeatSubstate
 				else {
 					PlayState.resetSongInfos();
 					if (Charter.instance != null) Charter.instance.__clearStatics();
+
+					// prevents certain notes to disappear early when exiting  - Nex
+					game.strumLines.forEachAlive(function(grp) grp.notes.__forcedSongPos = Conductor.songPosition);
 
 					CoolUtil.playMenuSong();
 					FlxG.switchState(PlayState.isStoryMode ? new StoryMenuState() : new FreeplayState());
