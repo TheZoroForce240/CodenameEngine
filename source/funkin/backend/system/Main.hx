@@ -156,6 +156,9 @@ class Main extends Sprite
 		FlxG.signals.postStateSwitch.add(onStateSwitchPost);
 
 		FlxG.mouse.useSystemCursor = true;
+		#if DARK_MODE_WINDOW
+		if(funkin.backend.utils.NativeAPI.hasVersion("Windows 10")) funkin.backend.utils.NativeAPI.redrawWindowHeader();
+		#end
 
 		ModsFolder.init();
 		#if MOD_SUPPORT
@@ -166,6 +169,8 @@ class Main extends Sprite
 	}
 
 	public static function refreshAssets() {
+		WindowUtils.resetTitle();
+
 		FlxSoundTray.volumeChangeSFX = Paths.sound('menu/volume');
 		FlxSoundTray.volumeUpChangeSFX = null;
 		FlxSoundTray.volumeDownChangeSFX = null;

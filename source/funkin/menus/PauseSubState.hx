@@ -12,7 +12,9 @@ import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
 import funkin.options.keybinds.KeybindsOptions;
 import funkin.menus.StoryMenuState;
+import funkin.backend.system.Conductor;
 import funkin.backend.utils.FunkinParentDisabler;
+import funkin.options.TreeMenu;
 
 class PauseSubState extends MusicBeatSubstate
 {
@@ -122,13 +124,12 @@ class PauseSubState extends MusicBeatSubstate
 
 		var upP = controls.UP_P;
 		var downP = controls.DOWN_P;
-		var accepted = controls.ACCEPT;
+		var scroll = FlxG.mouse.wheel;
 
-		if (upP)
-			changeSelection(-1);
-		if (downP)
-			changeSelection(1);
-		if (accepted)
+		if (upP || downP || scroll != 0)  // like this we wont break mods that expect a 0 change event when calling sometimes  - Nex
+			changeSelection((upP ? -1 : 0) + (downP ? 1 : 0) - scroll);
+
+		if (controls.ACCEPT)
 			selectOption();
 	}
 
@@ -152,6 +153,7 @@ class PauseSubState extends MusicBeatSubstate
 				persistentDraw = false;
 				openSubState(new KeybindsOptions());
 			case "Change Options":
+				TreeMenu.lastState = PlayState;
 				FlxG.switchState(new OptionsMenu());
 			case "Exit to charter":
 				FlxG.switchState(new funkin.editors.charter.Charter(PlayState.SONG.meta.name, PlayState.difficulty, false));
@@ -161,6 +163,9 @@ class PauseSubState extends MusicBeatSubstate
 				else {
 					PlayState.resetSongInfos();
 					if (Charter.instance != null) Charter.instance.__clearStatics();
+
+					// prevents certain notes to disappear early when exiting  - Nex
+					game.strumLines.forEachAlive(function(grp) grp.notes.__forcedSongPos = Conductor.songPosition);
 
 					CoolUtil.playMenuSong();
 					FlxG.switchState(PlayState.isStoryMode ? new StoryMenuState() : new FreeplayState());

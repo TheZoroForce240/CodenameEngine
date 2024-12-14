@@ -358,6 +358,7 @@ class Charter extends UIState {
 					null,
 					{
 						label: "↑ Speed 25%",
+						keybind: [PERIOD],
 						onSelect: _playback_speed_raise
 					},
 					{
@@ -366,6 +367,7 @@ class Charter extends UIState {
 					},
 					{
 						label: "↓ Speed 25%",
+						keybind: [COMMA],
 						onSelect: _playback_speed_lower
 					},
 					null,
@@ -378,6 +380,22 @@ class Charter extends UIState {
 						label: "Go forward a section",
 						keybind: [D],
 						onSelect: _playback_forward
+					},
+					{
+						label: "Go to start of section",
+						keybind: [SHIFT, S],
+						onSelect: _playback_section_start
+					},
+					null,
+					{
+						label: "Go back a step",
+						keybind: [W],
+						onSelect: _playback_back_step
+					},
+					{
+						label: "Go forward a step",
+						keybind: [S],
+						onSelect: _playback_forward_step
 					},
 					null,
 					{
@@ -1367,7 +1385,7 @@ class Charter extends UIState {
 			defaultSaveFile: '${__song.toLowerCase().replace(" ", "-")}${__diff.toLowerCase() == "normal" ? "" : '-${__diff.toLowerCase()}'}.json',
 		}));
 	}
-	
+
 	function _file_saveas_psych(_) {
 		openSubState(new SaveSubstate(Json.stringify(PsychParser.encode(PlayState.SONG), null, Options.editorPrettyPrint ? "\t" : null), {
 			defaultSaveFile: '${__song.toLowerCase().replace(" ", "-")}${__diff.toLowerCase() == "normal" ? "" : '-${__diff.toLowerCase()}'}.json',
@@ -1608,6 +1626,18 @@ class Charter extends UIState {
 		if (FlxG.sound.music.playing) return;
 		Conductor.songPosition += (Conductor.beatsPerMeasure * __crochet);
 	}
+	function _playback_section_start(_) {
+		if(FlxG.sound.music.playing) return;
+		Conductor.songPosition = (Conductor.beatsPerMeasure * (60000 / Conductor.bpm)) * curMeasure;
+	}
+	function _playback_back_step(_) {
+		if (FlxG.sound.music.playing) return;
+		Conductor.songPosition -= Conductor.stepCrochet;
+	}
+	function _playback_forward_step(_) {
+		if (FlxG.sound.music.playing) return;
+		Conductor.songPosition += Conductor.stepCrochet;
+	}
 	function _song_start(_) {
 		if (FlxG.sound.music.playing) return;
 		Conductor.songPosition = 0;
@@ -1696,7 +1726,7 @@ class Charter extends UIState {
 		changeNoteSustain(-1);
 
 	function _note_selectall(_) {
-		selection = [for (note in notesGroup.members) note];
+		selection = cast notesGroup.members.copy();
 	}
 
 	function _note_selectmeasure(_) {

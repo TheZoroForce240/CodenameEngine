@@ -73,7 +73,8 @@ function confText(text) {
 }
 
 function destroy() {
-	FlxG.cameras.remove(pauseCam);
+	if(FlxG.cameras.list.contains(pauseCam))
+		FlxG.cameras.remove(pauseCam);
 }
 
 var canDoShit = true;
@@ -91,15 +92,11 @@ function update(elapsed) {
 
 	if (!canDoShit) return;
 	var oldSec = curSelected;
-	if (controls.DOWN_P)
-		changeSelection(1, false);
-	if (controls.UP_P)
-		changeSelection(-1);
 
-	if (oldSec != curSelected) {
+	changeSelection((controls.UP_P ? -1 : 0) + (controls.DOWN_P ? 1 : 0) - FlxG.mouse.wheel);
+
+	if (oldSec != curSelected)
 		FlxG.sound.play(Paths.sound(isThorns ? 'pixel/type' : 'pixel/pixelText'));
-	}
-
 
 	if (controls.ACCEPT) {
 		FlxG.sound.play(Paths.sound(isThorns ? 'pixel/ANGRY' : 'pixel/clickText'));
@@ -117,7 +114,7 @@ function update(elapsed) {
 	}
 }
 
-function changeSelection(change) {
+function changeSelection(change) {  // this overrides the function inside of the normal pause btw, so no event gets called  - Nex
 	curSelected += change;
 
 	if (curSelected < 0)
