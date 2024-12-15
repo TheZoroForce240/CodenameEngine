@@ -192,6 +192,7 @@ final class Conductor
 			beatsPerMeasure: song.meta.beatsPerMeasure.getDefault(4),
 			stepsPerBeat: CoolUtil.floorInt(song.meta.stepsPerBeat.getDefault(4))
 		};
+		curChangeIndex = 0;
 		bpmChangeMap = [curChange];
 		if (song.events == null) return;
 
@@ -450,8 +451,19 @@ final class Conductor
 		}
 	}
 
+	public static function getMeasuresInTime(measureTime:Float, from:Int = 0):Float {
+		var index = getMeasuresInChangeIndex(measureTime, from);
+		if (index == -1) return measureTime * (60000 / 100 / 4);
+		else if (index == 0) return measureTime * (15000 / bpmChangeMap[index].bpm) * bpmChangeMap[index].stepsPerBeat * bpmChangeMap[index].beatsPerMeasure;
+		else {
+			var change = bpmChangeMap[index];
+			var stepTime = change.stepTime + (measureTime - change.measureTime) * change.stepsPerBeat * change.beatsPerMeasure;
+			return getStepsWithBPMInTime(stepTime, index, getStepsWithIndexInBPM(stepTime, index));
+		}
+	}
+
 	public static function getBeatsInTime(beatTime:Float, from:Int = 0):Float {
-		var index = getStepsInChangeIndex(beatTime, from);
+		var index = getBeatsInChangeIndex(beatTime, from);
 		if (index == -1) return beatTime * (60000 / 100);
 		else if (index == 0) return beatTime * (15000 / bpmChangeMap[index].bpm) * bpmChangeMap[index].stepsPerBeat;
 		else {
