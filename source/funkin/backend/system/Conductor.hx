@@ -14,6 +14,7 @@ class BPMChangeEvent
 	public var stepsPerBeat:Int = 4;
 
 	public var endSongTime:Float = 0;
+	public var endStepTime:Float = 0;
 	public var continuous:Bool = false;
 
 	public var stepTime:Float;
@@ -157,8 +158,7 @@ final class Conductor
 	private static function mapBPMChange(curChange:BPMChangeEvent, time:Float, bpm:Float, ?endTime:Float, ?prevChange:BPMChangeEvent):BPMChangeEvent {
 		var beatTime:Float, measureTime:Float, stepTime:Float;
 		if (curChange.continuous)
-			stepTime = curChange.stepTime + (((curChange.endSongTime - curChange.songTime) * (curChange.bpm - prevChange.bpm))
-				/ Math.log(curChange.bpm / prevChange.bpm) + (time - curChange.endSongTime) * curChange.bpm) / 15000;
+			stepTime = curChange.endStepTime + (time - curChange.endSongTime) / (15000 / curChange.bpm)
 		else
 			stepTime = curChange.stepTime + (time - curChange.songTime) / (15000 / curChange.bpm);
 
@@ -198,7 +198,7 @@ final class Conductor
 
 		// fix the sort first...
 		var events:Array<ChartEvent> = [];
-		for (e in song.events) if (e.params != null && (e.name == "BPM Change" || e.name == "Time Signature Change")) events.push(e);
+		for (e in song.events) if (e.params != null && (e.name == "BPM Change" || e.name == "Time Signature Change" || e.name == "Continuous BPM Change")) events.push(e);
 		events.sort(function(a, b) return Std.int(a.time - b.time));
 
 		var prevChange:BPMChangeEvent = null;
@@ -218,6 +218,16 @@ final class Conductor
 				curChange.stepTime = CoolUtil.floorInt(curChange.stepTime + .99998);
 				curChange.beatTime = CoolUtil.floorInt(curChange.beatTime + .99998);
 				curChange.measureTime = CoolUtil.floorInt(curChange.measureTime + .99998);
+			} else if (name == "Continuous BPM Change") {
+				
+				var prevBPM = curChange.bpm;
+				curChange = mapBPMChange(curChange, time, params[0], 0, prevChange);
+				//var endStep = curChange.stepTime + params[1];
+				var endTime = time + (params[1]) / (curChange.bpm - prevBPM) * Math.log(curChange.bpm / prevBPM) * 15000;
+				curChange.endStepTime = curChange.stepTime + params[1];
+				curChange.continuous = true;
+				curChange.endSongTime = endTime;
+				
 			}
 		}
 	}

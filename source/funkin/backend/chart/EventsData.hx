@@ -10,7 +10,7 @@ import funkin.backend.assets.Paths;
 using StringTools;
 
 class EventsData {
-	public static var defaultEventsList:Array<String> = ["HScript Call", "Camera Movement", "Add Camera Zoom", "Camera Modulo Change", "Camera Flash", "BPM Change", "Scroll Speed Change", "Alt Animation Toggle", "Play Animation", "Time Signature Change"];
+	public static var defaultEventsList:Array<String> = ["HScript Call", "Camera Movement", "Add Camera Zoom", "Camera Modulo Change", "Camera Flash", "BPM Change", "Continuous BPM Change", "Scroll Speed Change", "Alt Animation Toggle", "Play Animation", "Time Signature Change"];
 	public static var defaultEventsParams:Map<String, Array<EventParamInfo>> = [
 		"HScript Call" => [
 			{name: "Function Name", type: TString, defValue: "myFunc"},
@@ -32,6 +32,7 @@ class EventsData {
 			{name: "Camera", type: TDropDown(['camGame', 'camHUD']), defValue: "camHUD"}
 		],
 		"BPM Change" => [{name: "Target BPM", type: TFloat(1), defValue: 100}],
+		"Continuous BPM Change" => [{name: "Target BPM", type: TFloat(1), defValue: 100}, {name: "Time (steps)", type: TFloat(0.25, 9999, 0.25, 2), defValue: 4}],
 		"Scroll Speed Change" => [
 			{name: "Tween Speed?", type: TBool, defValue: true},
 			{name: "New Speed", type: TFloat(0.01, 99, 0.01, 2), defValue: 1.},
