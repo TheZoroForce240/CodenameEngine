@@ -54,25 +54,7 @@ class CharterStrumline extends UISprite {
 
 		if(strumLine.visible == null) strumLine.visible = true;
 
-		var icons = strumLine.characters != null ? strumLine.characters : [];
-
-		keyCount = strumLine.keyCount != null ? strumLine.keyCount : 4;
-
 		healthIcons = new FlxSpriteGroup(x, y);
-
-		var maxCol = icons.length < 4 ? icons.length : 4;
-		var maxRow = Math.floor((icons.length-1) / 4) + 1;
-		for (i=>icon in icons) {
-			var healthIcon = new HealthIcon(Character.getIconFromCharName(icon));
-			healthIcon.scale.x = healthIcon.scale.y = Math.max((0.6 - (icons.length / 20)), 0.35);
-			healthIcon.updateHitbox();
-
-			healthIcon.x = FlxMath.lerp(0, Math.min(icons.length * 20, 120), (maxCol-1 != 0 ? (i % 4) / (maxCol-1) : 0));
-			healthIcon.y = (draggable ? 29 : 7) + FlxMath.lerp(0, Math.min(maxRow * 15, 60), (maxRow-1 != 0 ? Math.floor(i / 4) / (maxRow-1) : 0));
-			healthIcon.alpha = strumLine.visible ? 1 : 0.4;
-			healthIcons.add(healthIcon);
-		}
-
 		members.push(healthIcons);
 
 		draggingSprite = new UISprite();
@@ -86,8 +68,7 @@ class CharterStrumline extends UISprite {
 		button = new CharterStrumlineOptions(this);
 		members.push(button);
 
-		vocals = strumLine.vocalsSuffix.length > 0 ? FlxG.sound.load(Paths.voices(PlayState.SONG.meta.name, PlayState.difficulty, strumLine.vocalsSuffix)) : new FlxSound();
-		vocals.group = FlxG.sound.defaultMusicGroup;
+		updateInfo();
 
 		selectedWaveform = -1;
 	}
@@ -125,7 +106,9 @@ class CharterStrumline extends UISprite {
 		var maxRow = Math.floor((icons.length-1) / 4) + 1;
 		for (i=>icon in icons) {
 			var healthIcon = new HealthIcon(Character.getIconFromCharName(icon));
-			healthIcon.scale.x = healthIcon.scale.y = Math.max((0.6 - (icons.length / 20)), 0.35);
+			var newScale = Math.max((0.6 - (icons.length / 20)), 0.35);
+			var size = Std.int(150 * newScale);
+			healthIcon.setUnstretchedGraphicSize(size, size, true);
 			healthIcon.updateHitbox();
 
 			healthIcon.x = FlxMath.lerp(0, Math.min(icons.length * 20, 120), (maxCol-1 != 0 ? (i % 4) / (maxCol-1) : 0));

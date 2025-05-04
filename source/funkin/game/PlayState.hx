@@ -295,6 +295,11 @@ class PlayState extends MusicBeatState
 	 */
 	public var iconP2:HealthIcon;
 	/**
+	 * Every active icon that will be updated during gameplay (defaults to `iconP1` and `iconP1` between `create` and `postCreate` in scripts)
+	 */
+	public var iconArray:Array<HealthIcon> = [];
+
+	/**
 	 * Camera for the HUD (notes, misses).
 	 */
 	public var camHUD:HudCamera;
@@ -522,10 +527,10 @@ class PlayState extends MusicBeatState
 	 */
 	public function updateRating() {
 		var rating = null;
-		var acc = get_accuracy();
+		var acc = accuracy;  // caching since it has a getter with an operation  - Nex
 
-		for(e in comboRatings)
-			if (e.percent <= acc && (rating == null || rating.percent < e.percent))
+		if (comboRatings != null && comboRatings.length > 0) for (e in comboRatings)
+			if ((e.percent <= acc && e.maxMisses >= misses) && (rating == null || (rating.percent < e.percent && e.maxMisses >= misses)))
 				rating = e;
 
 		var event = scripts.event("onRatingUpdate", EventManager.get(RatingUpdateEvent).recycle(rating, curRating));
@@ -609,10 +614,11 @@ class PlayState extends MusicBeatState
 				// case "":
 					// ADD YOUR HARDCODED SCRIPTS HERE!
 				default:
-					var scriptsFolders:Array<String> = ['songs/${SONG.meta.name.toLowerCase()}/scripts', 'data/charts/', 'songs/'];
+					var normal = 'songs/${SONG.meta.name.toLowerCase()}/scripts';
+					var scriptsFolders:Array<String> = [normal, normal + '/$difficulty/', 'data/charts/', 'songs/'];
 
-					for(folder in scriptsFolders) {
-						for(file in Paths.getFolderContent(folder, true, fromMods ? MODS : BOTH)) {
+					for (folder in scriptsFolders) {
+						for (file in Paths.getFolderContent(folder, true, fromMods ? MODS : BOTH)) {
 							if (folder == 'data/charts/')
 								Logs.trace('data/charts/ is deprecrated and will be removed in the future. Please move script $file to songs/', WARNING, DARKYELLOW);
 
@@ -749,9 +755,9 @@ class PlayState extends MusicBeatState
 
 		health = maxHealth / 2;
 
-		iconP1 = new HealthIcon(boyfriend != null ? boyfriend.getIcon() : "face", true);
-		iconP2 = new HealthIcon(dad != null ? dad.getIcon() : "face", false);
-		for(icon in [iconP1, iconP2]) {
+		iconArray.push(iconP1 = new HealthIcon(boyfriend != null ? boyfriend.getIcon() : "face", true));
+		iconArray.push(iconP2 = new HealthIcon(dad != null ? dad.getIcon() : "face", false));
+		for (icon in iconArray) {
 			icon.y = healthBar.y - (icon.height / 2);
 			add(icon);
 		}
@@ -768,7 +774,8 @@ class PlayState extends MusicBeatState
 		scoreTxt.alignment = RIGHT;
 		missesTxt.alignment = CENTER;
 		accuracyTxt.alignment = LEFT;
-		updateRatingStuff();
+		if (updateRatingStuff != null)
+			updateRatingStuff();
 
 		for(e in [healthBar, healthBarBG, iconP1, iconP2, scoreTxt, missesTxt, accuracyTxt])
 			e.cameras = [camHUD];
@@ -808,7 +815,8 @@ class PlayState extends MusicBeatState
 
 		// Make icons appear in the correct spot during cutscenes
 		healthBar.update(0);
-		updateIconPositions();
+		if (updateIconPositions != null)
+			updateIconPositions();
 
 		__updateNote_event = EventManager.get(NoteUpdateEvent);
 
@@ -1213,21 +1221,22 @@ class PlayState extends MusicBeatState
 		]));
 	}
 
-	function updateIconPositions() {
+	dynamic function updateIconPositions() {
 		var iconOffset:Int = 26;
+		var healthBarPercent = healthBar.percent;
 
-		var center:Float = healthBar.x + healthBar.width * FlxMath.remapToRange(healthBar.percent, 0, 100, 1, 0);
+		var center:Float = healthBar.x + healthBar.width * FlxMath.remapToRange(healthBarPercent, 0, 100, 1, 0);
 
 		iconP1.x = center - iconOffset;
 		iconP2.x = center - (iconP2.width - iconOffset);
 
 		health = FlxMath.bound(health, 0, maxHealth);
 
-		iconP1.health = healthBar.percent / 100;
-		iconP2.health = 1 - (healthBar.percent / 100);
+		iconP1.health = healthBarPercent / 100;
+		iconP2.health = 1 - (healthBarPercent / 100);
 	}
 
-	function updateRatingStuff() {
+	dynamic function updateRatingStuff() {
 		scoreTxt.text = 'Score:$songScore';
 		missesTxt.text = '${comboBreaks ? "Combo Breaks" : "Misses"}:$misses';
 
@@ -1257,10 +1266,8 @@ class PlayState extends MusicBeatState
 			return;
 		}
 
-		updateRatingStuff();
-
-		if (controls.PAUSE && startedCountdown && canPause)
-			pauseGame();
+		if (updateRatingStuff != null)
+			updateRatingStuff();
 
 		if (canAccessDebugMenus) {
 			if (chartingMode && FlxG.keys.justPressed.SEVEN) {
@@ -1273,14 +1280,13 @@ class PlayState extends MusicBeatState
 			}
 		}
 
-        if (doIconBop) {
-			iconP1.scale.set(lerp(iconP1.scale.x, 1, 0.33), lerp(iconP1.scale.y, 1, 0.33));
-			iconP2.scale.set(lerp(iconP2.scale.x, 1, 0.33), lerp(iconP2.scale.y, 1, 0.33));
+		if (doIconBop)
+			for (icon in iconArray)
+				if (icon.updateBump != null)
+					icon.updateBump();
 
-			iconP1.updateHitbox();
-			iconP2.updateHitbox();
-		}
-		updateIconPositions();
+		if (updateIconPositions != null)
+			updateIconPositions();
 
 		if (startingSong)
 		{
@@ -1302,6 +1308,9 @@ class PlayState extends MusicBeatState
 
 		while(events.length > 0 && events.last().time <= Conductor.songPosition)
 			executeEvent(events.pop());
+
+		if (controls.PAUSE && startedCountdown && canPause)
+			pauseGame();
 
 		if (generatedMusic && strumLines.members[curCameraTarget] != null)
 		{
@@ -1687,9 +1696,9 @@ class PlayState extends MusicBeatState
 
 		var event:NoteHitEvent;
 		if (strumLine != null && !strumLine.cpu)
-			event = EventManager.get(NoteHitEvent).recycle(false, !note.isSustainNote, !note.isSustainNote, null, defaultDisplayRating, defaultDisplayCombo, note, strumLine.characters, true, note.noteType, note.animSuffix.getDefault(note.strumID < strumLine.members.length ? strumLine.members[note.strumID].animSuffix : strumLine.animSuffix), "game/score/", "", note.strumID, score, note.isSustainNote ? null : accuracy, 0.023, daRating, Options.splashesEnabled && !note.isSustainNote && daRating == "sick");
+			event = EventManager.get(NoteHitEvent).recycle(false, !note.isSustainNote, !note.isSustainNote, null, defaultDisplayRating, defaultDisplayCombo, note, strumLine.characters, true, note.noteType, note.animSuffix.getDefault(note.strumID < strumLine.members.length ? strumLine.members[note.strumID].animSuffix : strumLine.animSuffix), "game/score/", "", note.strumID, score, note.isSustainNote ? null : accuracy, 0.023, daRating, Options.splashesEnabled && !note.isSustainNote && daRating == "sick", 0.5, true, 0.7, true, true, iconP1);
 		else
-			event = EventManager.get(NoteHitEvent).recycle(false, false, false, null, defaultDisplayRating, defaultDisplayCombo, note, strumLine.characters, false, note.noteType, note.animSuffix.getDefault(note.strumID < strumLine.members.length ? strumLine.members[note.strumID].animSuffix : strumLine.animSuffix), "game/score/", "", note.strumID, 0, null, 0, daRating, false);
+			event = EventManager.get(NoteHitEvent).recycle(false, false, false, null, defaultDisplayRating, defaultDisplayCombo, note, strumLine.characters, false, note.noteType, note.animSuffix.getDefault(note.strumID < strumLine.members.length ? strumLine.members[note.strumID].animSuffix : strumLine.animSuffix), "game/score/", "", note.strumID, 0, null, 0, daRating, false, 0.5, true, 0.7, true, true, iconP2);
 		event.deleteNote = !note.isSustainNote; // work around, to allow sustain notes to be deleted
 		event = scripts.event(strumLine != null && !strumLine.cpu ? "onPlayerHit" : "onDadHit", event);
 		strumLine.onHit.dispatch(event);
@@ -1849,14 +1858,10 @@ class PlayState extends MusicBeatState
 			camHUD.zoom += 0.03 * camZoomingStrength;
 		}
 
-        if (doIconBop)
-		{
-			iconP1.scale.set(1.2, 1.2);
-			iconP2.scale.set(1.2, 1.2);
-
-			iconP1.updateHitbox();
-			iconP2.updateHitbox();
-		}
+		if (doIconBop)
+			for (icon in iconArray)
+				if (icon.bump != null)
+					icon.bump();
 
 		scripts.call("beatHit", [curBeat]);
 	}
@@ -1975,8 +1980,10 @@ final class ComboRating {
 	public var percent:Float;
 	public var rating:String;
 	public var color:FlxColor;
+	public var maxMisses:Float;  // Float since it could be Math.POSITIVE_INFINITY  - Nex
 
-	public function new(percent:Float, rating:String, color:FlxColor) {
+	public function new(?percent:Float, ?rating:String, ?color:FlxColor, ?misses:Float) {
+		maxMisses = misses == null || Math.isNaN(misses) ? Math.POSITIVE_INFINITY : misses;
 		this.percent = percent;
 		this.rating = rating;
 		this.color = color;
