@@ -42,7 +42,12 @@ class EditorPicker extends MusicBeatSubstate {
 			onClick: function() {
 				CoolUtil.openURL(Flags.URL_WIKI);
 			}
-		}
+		},
+		{
+			name: "Modchart Editor",
+			id: "modchart",
+			state: funkin.editors.modchart.ModchartSelection
+		},
 	];
 
 	public var sprites:Array<EditorPickerOption> = [];
