@@ -32,4 +32,8 @@ import flixel.group.FlxSpriteGroup.FlxTypedSpriteGroup;
 
 using StringTools;
 using funkin.backend.utils.CoolUtil;
+
+#if IMGUI
+import lime.tools.imgui.*;
+#end
 #end

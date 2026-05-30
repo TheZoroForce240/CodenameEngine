@@ -13,6 +13,7 @@ import funkin.backend.assets.ModsFolder;
 import funkin.backend.system.framerate.Framerate;
 import funkin.backend.system.framerate.SystemInfo;
 import funkin.backend.system.modules.*;
+import funkin.backend.system.console.ConsoleUI;
 import funkin.backend.utils.ThreadUtil;
 import funkin.editors.SaveWarning;
 import funkin.options.PlayerSettings;
@@ -70,6 +71,7 @@ class Main extends Sprite
 		instance = this;
 
 		CrashHandler.init();
+		ConsoleUI.init();
 
 		addChild(game = new FunkinGame(gameWidth, gameHeight, MainState, Options.framerate, Options.framerate, skipSplash, startFullscreen));
 
@@ -77,6 +79,10 @@ class Main extends Sprite
 		addChild(framerateSprite = new Framerate());
 		SystemInfo.init();
 		#end
+
+		#if IMGUI
+		addChild(lime.tools.imgui.ImGuiHandler.instance);
+		#end	
 	}
 
 	@:dox(hide)

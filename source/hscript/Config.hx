@@ -23,6 +23,10 @@ class Config {
 		"haxe.xml",
 		"haxe.CallStack",
 		"funkin",
+
+		#if IMGUI 
+		"lime.tools.imgui" 
+		#end
 		#end
 	];
 

@@ -2,12 +2,21 @@ package funkin.backend.system;
 
 import flixel.system.debug.log.LogStyle;
 import flixel.system.frontEnds.LogFrontEnd;
+import funkin.backend.system.console.ConsoleUI;
 import funkin.backend.utils.NativeAPI.ConsoleColor;
 import funkin.backend.utils.NativeAPI;
 import haxe.Log;
 
 final class Logs {
 	private static var __showing:Bool = false;
+
+	public static final LOG_WARNING_TEXT =     '   WARNING   ';
+	public static final LOG_ERROR_TEXT =       '    ERROR    ';
+	public static final LOG_TRACE_TEXT =       '    TRACE    ';
+	public static final LOG_VERBOSE_TEXT =     '   VERBOSE   ';
+	public static final LOG_SUCCESS_TEXT =     '   SUCCESS   ';
+	public static final LOG_FAILURE_TEXT =     '   FAILURE   ';
+	public static final LOG_INFORMATION_TEXT = ' INFORMATION ';
 
 	public static var nativeTrace = Log.trace;
 	public static function init() {
@@ -82,13 +91,13 @@ final class Logs {
 			logText('  |'),
 			switch (level)
 			{
-				case WARNING:	logText('   WARNING   ', DARKYELLOW);
-				case ERROR:		logText('    ERROR    ', DARKRED);
-				case TRACE:		logText('    TRACE    ', GRAY);
-				case VERBOSE:	logText('   VERBOSE   ', DARKMAGENTA);
-				case SUCCESS:	logText('   SUCCESS   ', GREEN);
-				case FAILURE:	logText('   FAILURE   ', RED);
-				default:		logText(' INFORMATION ', CYAN);
+				case WARNING:	logText(LOG_WARNING_TEXT, DARKYELLOW);
+				case ERROR:		logText(LOG_ERROR_TEXT, DARKRED);
+				case TRACE:		logText(LOG_TRACE_TEXT, GRAY);
+				case VERBOSE:	logText(LOG_VERBOSE_TEXT, DARKMAGENTA);
+				case SUCCESS:	logText(LOG_SUCCESS_TEXT, GREEN);
+				case FAILURE:	logText(LOG_FAILURE_TEXT, RED);
+				default:		logText(LOG_INFORMATION_TEXT, CYAN);
 			},
 			logText('] ')
 		];
@@ -128,6 +137,11 @@ final class Logs {
 		#else
 		@:privateAccess
 		nativeTrace([for(t in text) t.text].join(""));
+		#end
+
+		#if IMGUI
+		@:privateAccess
+		ConsoleUI.instance.addToConsole(text);
 		#end
 	}
 

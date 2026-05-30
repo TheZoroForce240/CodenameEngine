@@ -118,6 +118,11 @@
 	<!-- Disable a optimization, to allow reflection to use more functions -->
 	<define name="FLX_NO_GENERIC" />
 
+	<!-- Comment this out to disable support for Dear ImGui -->
+	<!-- <section if="cpp">
+		<define name="IMGUI" if="desktop"/>
+	</section> -->
+
 	<!-- _______________________________ Libraries ______________________________ -->
 
 	<!-- KEEP BOTH OF THESE AS THERE ARE SOME PARTICULAR CASES! -->
@@ -191,6 +196,7 @@
 	<haxedef name="SOFTCODED_CLASSES" if="SOFTCODED_CLASSES" />
 	<haxedef name="USE_ADAPTED_ASSETS" if="USE_ADAPTED_ASSETS" />
 	<haxedef name="openfl_dpi_aware" if="openfl_dpi_aware" />
+	<haxedef name="IMGUI" if="IMGUI" />
 
 	<!-- Disable it for more concise compilation errors. -->
 	<haxedef name="message.reporting" value="pretty" />
